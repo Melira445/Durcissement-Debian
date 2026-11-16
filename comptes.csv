@@ -1,0 +1,13 @@
+login;nom;groupe_principal;groupes_secondaires
+mjames;marine James;admins;acces_ssh
+jdupont;jean Dupont;admins;acces_ssh
+support;Compte support;support;acces_ssh
+tech1;Paul Lemaire;technique;
+tech2;Sara Benali;technique;
+cher1;Inès Moreau;chercheurs;
+cher2;Hugo Petit;chercheurs;
+doct1;Lina Roux;doctorants;
+doct2;Noah Faure;doctorants;
+invite1;Invité Un;invite;acces_ssh
+invite2;Invité Deux;invite;acces_ssh
+
