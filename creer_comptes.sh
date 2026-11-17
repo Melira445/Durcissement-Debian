@@ -13,22 +13,12 @@ verifier_root() {
 
 # Étape 2 : vérifier que comptes.csv existe
 verifier_fichier() {
-    :   # à écrire
-}
-
-# Étape 3 : créer les groupes s'ils n'existent pas déjà
-creer_groupes() {
-    :   # à écrire
-}
-
-# Étapes 4 et 5 : lire le CSV et créer les utilisateurs
-creer_utilisateurs() {
-    :   # à écrire
+    if [ ! -f "$FICHIER_COMPTES" ]; then
+        echo "Erreur : le fichier $FICHIER_COMPTES est introuvable." >&2
+        exit 1
+    fi
 }
 
 # ---------- Programme principal ----------
-
 verifier_root
 verifier_fichier
-creer_groupes
-creer_utilisateurs
