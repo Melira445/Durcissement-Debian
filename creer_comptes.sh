@@ -32,7 +32,18 @@ creer_groupes() {
     done
 }
 
+# Étape 4 : lire comptes.csv ligne par ligne
+lire_comptes() {
+    tail -n +2 "$FICHIER_COMPTES" | while IFS=';' read -r login nom groupe_principal groupes_secondaires; do
+        if [ -z "$login" ]; then
+            continue
+        fi
+        echo "Login : $login | Nom : $nom | Groupe : $groupe_principal | Secondaires : $groupes_secondaires"
+    done
+}
+
 # ---------- Programme principal ----------
 verifier_root
 verifier_fichier
 creer_groupes
+lire_comptes
