@@ -32,13 +32,30 @@ creer_groupes() {
     done
 }
 
-# Étape 4 : lire comptes.csv ligne par ligne
+# Étapes 4 et 5 : lire comptes.csv et créer les utilisateurs
 lire_comptes() {
     tail -n +2 "$FICHIER_COMPTES" | while IFS=';' read -r login nom groupe_principal groupes_secondaires; do
         if [ -z "$login" ]; then
             continue
         fi
-        echo "Login : $login | Nom : $nom | Groupe : $groupe_principal | Secondaires : $groupes_secondaires"
+
+        if id "$login" > /dev/null 2>&1; then
+            echo "Le compte $login existe déjà."
+            continue
+        fi
+
+        if [ "$groupe_principal" = "invite" ]; then
+            shell="/usr/sbin/nologin"
+        else
+            shell="/bin/bash"
+        fi
+
+        if [ -n "$groupes_secondaires" ]; then
+            useradd -m -c "$nom" -g "$groupe_principal" -G "$groupes_secondaires" -s "$shell" "$login"
+        else
+            useradd -m -c "$nom" -g "$groupe_principal" -s "$shell" "$login"
+        fi
+        echo "Compte $login créé."
     done
 }
 
