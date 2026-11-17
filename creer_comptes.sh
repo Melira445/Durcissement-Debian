@@ -2,6 +2,7 @@
 # creer_comptes.sh : crée les groupes et les comptes à partir de comptes.csv
 
 FICHIER_COMPTES="comptes.csv"
+GROUPES="admins support acces_ssh technique chercheurs doctorants invite"
 
 # Étape 1 : vérifier que le script est lancé en root
 verifier_root() {
@@ -19,6 +20,19 @@ verifier_fichier() {
     fi
 }
 
+# Étape 3 : créer les groupes s'ils n'existent pas déjà
+creer_groupes() {
+    for g in $GROUPES; do
+        if getent group "$g" > /dev/null; then
+            echo "Le groupe $g existe déjà."
+        else
+            groupadd "$g"
+            echo "Groupe $g créé."
+        fi
+    done
+}
+
 # ---------- Programme principal ----------
 verifier_root
 verifier_fichier
+creer_groupes
