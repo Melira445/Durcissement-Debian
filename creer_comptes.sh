@@ -59,8 +59,29 @@ lire_comptes() {
     done
 }
 
+# Étape 6 : créer un dossier et lui poser ses droits (permissions + ACL)
+appliquer_droits() {
+    local dossier="$1"
+    local acl="$2"
+
+    mkdir -p "$dossier"
+    chmod o-rwx "$dossier"
+    setfacl -m "$acl" "$dossier"
+    setfacl -d -m "$acl" "$dossier"
+    echo "Dossier $dossier prêt."
+}
+
+creer_repertoires() {
+    appliquer_droits /srv/donnees_brutes "g:technique:rwx,g:chercheurs:rx,g:doctorants:rx"
+    appliquer_droits /srv/analyses "g:chercheurs:rwx,g:doctorants:rwx"
+    appliquer_droits /srv/publications "g:chercheurs:rwx,g:doctorants:rx,g:invite:rx"
+}
+
+
+
 # ---------- Programme principal ----------
 verifier_root
 verifier_fichier
 creer_groupes
 lire_comptes
+creer_repertoires
