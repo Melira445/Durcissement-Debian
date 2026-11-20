@@ -86,6 +86,29 @@ test_D1() {
     fi
 }
 
+# J2 : pare-feu nftables, entrée refusée par défaut sauf SSH et connexions établies
+test_J2() {
+    local regles
+    regles="$(nft list chain inet filtre entree 2>/dev/null)"
+    if echo "$regles" | grep -q "policy drop" \
+       && echo "$regles" | grep -q "established" \
+       && echo "$regles" | grep -q "dport 22 accept" \
+       && systemctl is-enabled --quiet nftables; then
+        ok "J2" "pare-feu : entrée refusée par défaut, SSH et connexions établies acceptées, actif au démarrage"
+    else
+        ko "J2" "règles nftables absentes ou incomplètes, ou service nftables non activé"
+    fi
+}
+
+# J2 : les règles de fail2ban coexistent avec le pare-feu
+test_J2b() {
+    if nft list table inet f2b-table > /dev/null 2>&1; then
+        ok "J2" "les règles de fail2ban sont présentes dans nftables"
+    else
+        ko "J2" "la table de fail2ban a disparu de nftables"
+    fi
+}
+
 # Programme principal
 test_C2a
 test_C2b
@@ -94,6 +117,9 @@ test_J3
 test_J1
 test_J4
 test_D1
+test_J2
+test_J2b
+
 echo "--- $NB_OK / $NB_TOTAL tests réussis"
 if [ "$NB_OK" -eq "$NB_TOTAL" ]; then
     exit 0
