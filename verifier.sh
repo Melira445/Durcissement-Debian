@@ -43,12 +43,20 @@ test_C2c() {
     fi
 }
 
-
+# J3 : le journal système est conservé après un redémarrage
+test_J3() {
+    if grep -rqs '^Storage=persistent' /etc/systemd/journald.conf /etc/systemd/journald.conf.d/ && [ -d /var/log/journal ]; then
+        ok "J3" "le journal système est persistant"
+    else
+        ko "J3" "le journal n'est pas configuré en Storage=persistent"
+    fi
+}
 
 # Programme principal
 test_C2a
 test_C2b
 test_C2c
+test_J3
 
 echo "--- $NB_OK / $NB_TOTAL tests réussis"
 if [ "$NB_OK" -eq "$NB_TOTAL" ]; then
