@@ -3,7 +3,7 @@
 # Codes de sortie : 0 = rien d'anormal, 1 = erreur, 2 = seuil d'alerte dépassé
 # Aucun argument : le script est lancé par root ou via sudo (compte support).
 
-SEUIL_ECHECS=5            # échecs depuis une même adresse IP qui déclenchent l'alerte
+SEUIL_ECHECS="${SEUIL_ECHECS:-5}"            # échecs depuis une même adresse IP qui déclenchent l'alerte
 PERIODE="24 hours ago"    # période analysée
 
 verifier_root() {

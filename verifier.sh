@@ -61,12 +61,29 @@ test_J1() {
     fi
 }
 
+# J4 : analyse_logs.sh renvoie 0 sans alerte et 2 si le seuil est dépassé
+test_J4() {
+    local script
+    script="$(dirname "$0")/analyse_logs.sh"
+    SEUIL_ECHECS=1000000 bash "$script" > /dev/null 2>&1
+    local code_calme=$?
+    SEUIL_ECHECS=0 bash "$script" > /dev/null 2>&1
+    local code_alerte=$?
+    if [ "$code_calme" -eq 0 ] && [ "$code_alerte" -eq 2 ]; then
+        ok "J4" "analyse_logs.sh renvoie 0 sans alerte et 2 si le seuil est dépassé"
+    else
+        ko "J4" "codes de sortie inattendus (calme : $code_calme, alerte : $code_alerte)"
+    fi
+}
+
 # Programme principal
 test_C2a
 test_C2b
 test_C2c
 test_J3
 test_J1
+test_J4
+
 echo "--- $NB_OK / $NB_TOTAL tests réussis"
 if [ "$NB_OK" -eq "$NB_TOTAL" ]; then
     exit 0
