@@ -76,6 +76,16 @@ test_J4() {
     fi
 }
 
+# D1 : les mises à jour de sécurité s'installent automatiquement
+test_D1() {
+    if dpkg-query -W -f='${Status}' unattended-upgrades 2>/dev/null | grep -q "install ok installed" \
+       && apt-config dump | grep -q '^APT::Periodic::Unattended-Upgrade "1"'; then
+        ok "D1" "unattended-upgrades est installé et activé"
+    else
+        ko "D1" "unattended-upgrades n'est pas installé ou pas activé"
+    fi
+}
+
 # Programme principal
 test_C2a
 test_C2b
@@ -83,7 +93,7 @@ test_C2c
 test_J3
 test_J1
 test_J4
-
+test_D1
 echo "--- $NB_OK / $NB_TOTAL tests réussis"
 if [ "$NB_OK" -eq "$NB_TOTAL" ]; then
     exit 0
