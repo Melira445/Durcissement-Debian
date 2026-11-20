@@ -52,12 +52,21 @@ test_J3() {
     fi
 }
 
+# J1 : fail2ban protège SSH
+test_J1() {
+    if systemctl is-active --quiet fail2ban && fail2ban-client status sshd > /dev/null 2>&1; then
+        ok "J1" "fail2ban est actif et la prison sshd est en service"
+    else
+        ko "J1" "fail2ban ou la prison sshd n'est pas actif"
+    fi
+}
+
 # Programme principal
 test_C2a
 test_C2b
 test_C2c
 test_J3
-
+test_J1
 echo "--- $NB_OK / $NB_TOTAL tests réussis"
 if [ "$NB_OK" -eq "$NB_TOTAL" ]; then
     exit 0
