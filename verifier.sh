@@ -100,14 +100,15 @@ test_J2() {
     fi
 }
 
-# J2 : les règles de fail2ban coexistent avec le pare-feu
+# J2 : fail2ban bannit via nftables
 test_J2b() {
-    if nft list table inet f2b-table > /dev/null 2>&1; then
-        ok "J2" "les règles de fail2ban sont présentes dans nftables"
+    if fail2ban-client get sshd actions 2>/dev/null | grep -q "nftables"; then
+        ok "J2" "fail2ban bannit via nftables"
     else
-        ko "J2" "la table de fail2ban a disparu de nftables"
+        ko "J2" "la prison sshd n'utilise pas l'action nftables"
     fi
 }
+
 
 # Programme principal
 test_C2a
