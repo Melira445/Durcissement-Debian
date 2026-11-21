@@ -223,6 +223,73 @@ test_D3b() {
     fi
 }
 
+# S1 : le mot de passe SSH est refusé
+test_S1a() {
+    if sshd -T 2>/dev/null | grep -qi '^passwordauthentication no$'; then
+        ok "SSH refuse le mot de passe"
+    else
+        ko  "Le PasswordAuthentication n'est pas no"
+    fi
+}
+
+# S1 : la connexion se fait par clé uniquement
+test_S1b() {
+    if sshd -T 2>/dev/null | grep -qi '^authenticationmethods publickey$'; then
+        ok  "SSH n'accepte que la clé publique"
+    else
+        ko  " L'AuthenticationMethods n'est pas publickey"
+    fi
+}
+
+# S2 : la connexion de root est interdite
+test_S2() {
+    if sshd -T 2>/dev/null | grep -qi '^permitrootlogin no$'; then
+        ok  "connexion root refusée"
+    else
+        ko  "PermitRootLogin n'est pas à 'no'"
+    fi
+}
+
+# S3 : seuls les membres de acces_ssh peuvent se connecter
+test_S3() {
+    if sshd -T 2>/dev/null | grep -qi '^allowgroups acces_ssh$'; then
+        ok  "AllowGroups limité à acces_ssh"
+    else
+        ko  "AllowGroups n'est pas limité à acces_ssh"
+    fi
+}
+
+# S4 : au plus 4 essais d'authentification par connexion
+test_S4a() {
+    local essais
+    essais=$(sshd -T 2>/dev/null | awk '$1=="maxauthtries"{print $2}')
+    if [ "${essais:-99}" -le 4 ]; then
+        ok  "MaxAuthTries est à $essais"
+    else
+        ko  "MaxAuthTries est à ${essais:-absent} (attendu : 4 ou moins)"
+    fi
+}
+
+# S4 : une session inactive est fermée au bout de 15 minutes
+test_S4b() {
+    if sshd -T 2>/dev/null | grep -qi '^channeltimeout session=15m$'; then
+        ok  "ChannelTimeout session=15m"
+    else
+        ko  "ChannelTimeout n'est pas à session=15m"
+    fi
+}
+
+# S5 : la configuration est dans sshd_config.d et valide
+test_S5() {
+    if [ -f /etc/ssh/sshd_config.d/00-biolab.conf ] && sshd -t 2>/dev/null; then
+        ok  "configuration SSH dans sshd_config.d et valide"
+    else
+        ko  "fichier absent de sshd_config.d ou sshd -t en erreur"
+    fi
+}
+
+
+
 # Programme principal
 test_C2a
 test_C2b
@@ -235,6 +302,14 @@ test_J2
 test_J2b
 test_C4a
 test_C4b
+
+test_S1a
+test_S1b
+test_S2
+test_S3
+test_S4a
+test_S4b
+test_S5
 
 test_B1
 test_B1b
