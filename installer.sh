@@ -41,7 +41,6 @@ sshd -t
 systemctl reload ssh
 
 gpasswd -d yasmine sudo 2>/dev/null || true
-gpasswd -d yasmine sudo 2>/dev/null || true
 passwd -l root
 
 /usr/local/sbin/sauvegarde.sh
