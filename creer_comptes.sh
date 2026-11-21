@@ -78,10 +78,34 @@ creer_repertoires() {
 }
 
 
+# Étape 7 : installer les clés publiques des comptes de acces_ssh
+installer_cles() {
+    local dossier_cles
+    dossier_cles="$(dirname "$0")/config/cles_publiques"
+    tail -n +2 "$FICHIER_COMPTES" | while IFS=';' read -r login nom groupe_principal groupes_secondaires; do
+        if [ -z "$login" ]; then
+            continue
+        fi
+        if ! echo "$groupes_secondaires" | tr ',' '\n' | grep -qx "acces_ssh"; then
+            continue
+        fi
+        if [ ! -f "$dossier_cles/$login.pub" ]; then
+            echo "Avertissement : pas de clé publique pour $login" >&2
+            continue
+        fi
+        install -d -m 700 -o "$login" -g "$groupe_principal" "/home/$login/.ssh"
+        install -m 600 -o "$login" -g "$groupe_principal" "$dossier_cles/$login.pub" "/home/$login/.ssh/authorized_keys"
+        echo "Clé installée pour $login."
+    done
+}
 
-# ---------- Programme principal ----------
+
+
+
+# Programme principal
 verifier_root
 verifier_fichier
 creer_groupes
 lire_comptes
 creer_repertoires
+installer_cles
