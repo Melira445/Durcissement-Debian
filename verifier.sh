@@ -109,6 +109,25 @@ test_J2b() {
     fi
 }
 
+# C4 : le compte root est verrouillé
+test_C4a() {
+    if [ "$(passwd -S root | awk '{print $2}')" = "L" ]; then
+        ok "C4" "le compte root est verrouillé"
+    else
+        ko "C4" "le compte root n'est pas verrouillé"
+    fi
+}
+
+# C4 : les répertoires personnels ne sont pas accessibles aux autres
+test_C4b() {
+    local ouverts
+    ouverts=$(find /home -mindepth 1 -maxdepth 1 -type d -perm /007)
+    if [ -z "$ouverts" ]; then
+        ok "C4" "les répertoires personnels sont fermés aux autres"
+    else
+        ko "C4" "répertoires accessibles aux autres : $ouverts"
+    fi
+}
 
 # Programme principal
 test_C2a
@@ -120,6 +139,8 @@ test_J4
 test_D1
 test_J2
 test_J2b
+test_C4a
+test_C4b
 
 echo "--- $NB_OK / $NB_TOTAL tests réussis"
 if [ "$NB_OK" -eq "$NB_TOTAL" ]; then
