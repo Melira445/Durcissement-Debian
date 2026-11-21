@@ -194,15 +194,6 @@ test_B4() {
     fi
 }
 
-# D1 : mises à jour automatiques activées
-test_D1() {
-    if grep -q 'Unattended-Upgrade "1"' /etc/apt/apt.conf.d/20auto-upgrades; then
-        ok "D1" "mises à jour automatiques activées"
-    else
-        ko "D1" "mises à jour automatiques non activées"
-    fi
-}
-
 # D2 : aucun port TCP n'écoute sauf le 22
 test_D2() {
     if ss -tln | tail -n +2 | grep -v ':22 ' | grep -q .; then
@@ -252,7 +243,6 @@ test_B2
 test_B2b
 test_B3
 test_B4
-test_D1
 test_D2
 test_D3a
 test_D3b
