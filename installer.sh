@@ -40,6 +40,12 @@ cp config/ssh/00-biolab.conf /etc/ssh/sshd_config.d/00-biolab.conf
 sshd -t
 systemctl reload ssh
 
+gpasswd -d yasmine sudo 2>/dev/null || true
+gpasswd -d yasmine sudo 2>/dev/null || true
 passwd -l root
+
+/usr/local/sbin/sauvegarde.sh
+sleep 2
+/usr/local/sbin/sauvegarde.sh
 
 echo "Installation terminée"
