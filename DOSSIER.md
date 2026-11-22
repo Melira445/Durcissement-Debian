@@ -26,6 +26,37 @@
 ## 4. Procédure de restauration
 
 
+## 1. Tableau de conformité (parties C1, C2, C4, J1 à J4)
+
+| ID | Mise en place | Test dans verifier.sh | Vérification et état | ANSSI |
+|---|---|---|---|---|
+| C1 | `creer_comptes.sh` lit `comptes.csv`, crée les 7 groupes et les 11 comptes (groupe principal, groupes secondaires, shell `nologin` pour `invite`). Le script peut être relancé sans erreur. | `test_C1` (à ajouter) | Lancé deux fois : la seconde exécution affiche « existe déjà » partout, sans erreur ni doublon. | à compléter |
+| C2 | `creer_comptes.sh` crée `/srv/donnees_brutes`, `/srv/analyses` et `/srv/publications`, retire les droits aux autres (`chmod o-rwx`) et pose les ACL du tableau du contexte C (`setfacl -m`), y compris les ACL par défaut (`setfacl -d -m`). | `test_C2a`, `test_C2b`, `test_C2c` | Testé avec `sudo -u` : `tech1` écrit dans `donnees_brutes`, `cher1` et `invite1` sont refusés ; un fichier créé par `tech1` est lisible par `cher1` (ACL par défaut) ; `doct1` écrit dans `analyses`, `tech1` est refusé ; `invite1` lit `publications` mais n'y écrit pas. | à compléter |
+| C4 | `passwd -l root` verrouille root ; `chmod 700 /home/*` ferme les répertoires personnels aux autres. | `test_C4a`, `test_C4b` | `passwd -S root` affiche `L` ; aucun dossier de `/home` n'est accessible aux autres. | à compléter |
+| J1 | `config/fail2ban/jail.d/sshd.conf` : prison `sshd`, `backend = systemd`, `banaction = nftables`, `maxretry = 4`, `findtime = 10m`, `bantime = 10m`. | `test_J1` | Après des échecs répétés depuis le poste client, son adresse est apparue dans « Banned IP list », puis a été libérée avec `fail2ban-client set sshd unbanip`. | à compléter |
+| J2 | `config/nftables.conf` : table `inet filtre`, chaîne `entree` en `policy drop`, avec acceptation des connexions établies, de la boucle locale et du port 22. Fichier copié dans `/etc/nftables.conf`, service `nftables` activé. | `test_J2`, `test_J2b` | `nft list ruleset` confirme les règles ; SSH fonctionne, le ping est refusé ; les règles sont revenues après un redémarrage ; un `reload` n'a pas supprimé la table de fail2ban. | à compléter |
+| J3 | `config/journald.conf` (`Storage=persistent`) installé dans `/etc/systemd/journald.conf.d/`. | `test_J3` | `journalctl --list-boots` liste plusieurs démarrages, dont celui d'avant le redémarrage de test. | à compléter |
+| J4 | `analyse_logs.sh` : rapport sur 24 h (échecs par adresse IP, comptes visés, connexions réussies). Codes de sortie : 0 (rien), 1 (pas lancé en root), 2 (seuil dépassé). Seuil : 5 échecs par adresse. | `test_J4` | Sans root : erreur et code 1. Avec 6 échecs de test : « ALERTE » et code 2. | à compléter |
+| (clés)| `creer_comptes.sh` installe les clés publiques de `config/cles_publiques/` pour les comptes de `acces_ssh` (`.ssh` en 700, `authorized_keys` en 600). | `test_CLES` (à ajouter) | Avec une clé de test : connexion de `support` sans mot de passe. | à compléter |
+
+## 2. Choix techniques
+
+- C1 : le script teste l'existence de chaque groupe et de chaque compte avant de le créer, ce qui le rend relançable (idempotent). `comptes.csv` ne contient aucun mot de passe. Le groupe `invite` reçoit `/usr/sbin/nologin` : aucun terminal, seulement du transfert de fichiers.
+- C2 : les permissions classiques n'offrent qu'un seul groupe par dossier. Les ACL permettent de donner des droits différents à plusieurs groupes. Pour un dossier, « lecture » correspond à `r-x` et « lecture/écriture » à `rwx`, car le `x` permet d'y entrer. Les ACL par défaut s'appliquent aux fichiers créés plus tard.
+- C4 : root est verrouillé, on administre avec `sudo` depuis un compte nominatif. Les dossiers personnels en 700 empêchent un utilisateur de lire ceux des autres.
+- J1 : `maxretry = 4` est aligné sur `MaxAuthTries 4` de SSH. `bantime = 10m` est assez court pour ne pas se bannir soi-même pendant les tests et la soutenance (en production, une durée plus longue serait préférable). `backend = systemd` car Debian 13 minimale n'a pas de fichier `auth.log`. Aucune adresse n'est exclue (`ignoreip`), pour pouvoir démontrer le bannissement.
+- J2 : `policy drop` refuse tout par défaut. La boucle locale est acceptée pour que la machine puisse communiquer avec elle-même. Le ping est refusé, ce qui est cohérent avec « tout est refusé sauf SSH ». La table a un nom propre et le fichier n'utilise pas `flush ruleset`, qui effacerait aussi les règles de fail2ban. On utilise `reload` et non `restart`, car l'arrêt du service nftables efface toutes les règles.
+- J3 : réglage explicite alors que Debian gardait déjà le journal sur disque : il garantit que ça reste vrai.
+- J4 : le script lit `journalctl -u ssh`. Il ne compte que les lignes `Failed password` (une ligne = une tentative ratée). La période est de 24 h. Le seuil est de 5 échecs par adresse : [à justifier avec tes mots]. Le script n'accepte aucun argument, car la règle sudo de `support` interdit les arguments, et il appartient à root.
+
+## 3. Défense : attaques rendues plus difficiles et limites
+
+- Force brute sur SSH : fail2ban bannit l'adresse après 4 échecs, et `analyse_logs.sh` repère les adresses insistantes. Limites : un attaquant qui change d'adresse ou qui espace ses essais passe sous le seuil ; fail2ban réagit après coup.
+- Scan de ports / service exposé : le pare-feu refuse tout sauf SSH. Limites : SSH reste exposé, et une faille de sshd ne serait pas bloquée ; le trafic sortant n'est pas filtré.
+- Utilisateur curieux : les dossiers personnels sont en 700 et les ACL limitent l'accès à `/srv`. Limites : root et les administrateurs voient tout, et un compte avec `sudo` contourne ces règles.
+- Compte métier compromis (par exemple un chercheur) : l'attaquant ne peut lire ou écrire que ce que les ACL autorisent à ce compte. Limites : il accède à tout ce que ce compte peut lire, et les données ne sont pas chiffrées.
+- Effacement des traces après un incident : le journal persistant permet d'enquêter même après un redémarrage. Limites : il est stocké sur la machine elle-même, donc un attaquant root peut l'effacer, et il n'est pas copié ailleurs.
+
 
 ## Tableau de conformité : parties B et D
 
